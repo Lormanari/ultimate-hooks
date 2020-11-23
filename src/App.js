@@ -1,7 +1,5 @@
-  
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
-
 
 const useField = (type) => {
   const [value, setValue] = useState('')
@@ -20,14 +18,21 @@ const useField = (type) => {
 const useResource = (baseUrl) => {
   const [resources, setResources] = useState([])
 
-  // ...
+  const getAll = () => {
+	const request = axios.get(baseUrl)
+	const data = request.then(response => response.data)
+	return data
+  }
 
-  const create = (resource) => {
-    // ...
+  const create = async resource => {
+	const response = await axios.post(baseUrl, resource)
+  	return response.data
   }
 
   const service = {
-    create
+	create,
+	getAll,
+	setResources
   }
 
   return [
@@ -42,15 +47,27 @@ const App = () => {
 
   const [notes, noteService] = useResource('http://localhost:3005/notes')
   const [persons, personService] = useResource('http://localhost:3005/persons')
+  useEffect(() => {
+	noteService.getAll().then(initialNotes => {
+		noteService.setResources(initialNotes)
+	})
+	personService.getAll().then(initialPersons => {
+		personService.setResources(initialPersons)
+	})
+  }, [])
 
   const handleNoteSubmit = (event) => {
     event.preventDefault()
-    noteService.create({ content: content.value })
+	noteService.create({ content: content.value }).then(returnedNote => {
+		noteService.setResources(notes.concat(returnedNote))
+	})
   }
- 
+
   const handlePersonSubmit = (event) => {
     event.preventDefault()
-    personService.create({ name: name.value, number: number.value})
+	personService.create({ name: name.value, number: number.value}).then(returnedPerson => {
+		personService.setResources(persons.concat(returnedPerson))
+	})
   }
 
   return (
